@@ -1,0 +1,123 @@
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+// Define survey questions and options
+unordered_map<string, vector<string>> survey_questions = {
+    {"academic_level", {"Undergraduate student", "Graduate student (Master's level)", "Graduate student (Ph.D. level)"}},
+    {"interest_area", {"Macroeconomics", "Microeconomics", "Development economics", "International economics",
+                       "Environmental economics", "Financial economics", "Other"}},
+    {"career_interest", {"Economic consultancy", "Banking and finance", "Nongovernmental international institutions",
+                         "Multinational companies", "Credit analyst", "Public relations", "Policy officer", "Startups",
+                         "Other"}},
+    {"career_factors", {"Job stability", "Salary potential", "Opportunities for career advancement", "Work-life balance",
+                        "Interest in the field", "Social impact", "Geographic location", "Other"}},
+    {"information_preference", {"Career fairs", "E-mail", "Online job boards", "Networking events",
+                                "University career services", "Social media platforms", "Referrals", "Other"}},
+    {"workshop_interest", {"Yes", "No"}},
+    {"mentorship_interest", {"Yes", "No"}}
+};
+
+// Function to get user input for a yes or no question
+bool get_yes_no_input(const string& question) {
+    string response;
+    while (true) {
+        cout << question << " (yes/no): ";
+        getline(cin, response);
+        if (response == "yes" || response == "no") {
+            return response == "yes";
+        } else {
+            cout << "Please enter 'yes' or 'no'." << endl;
+        }
+    }
+}
+
+// Function to get user input for multiple choice question
+vector<string> get_multiple_choice_input(const string& question, const vector<string>& options) {
+    vector<string> responses;
+    cout << question << endl;
+    for (const auto& option : options) {
+        if (get_yes_no_input("Do you have interest in " + option + "?")) {
+            responses.push_back(option);
+        }
+    }
+    return responses;
+}
+
+// Function to simulate survey responses
+unordered_map<string, vector<string>> simulate_responses() {
+    unordered_map<string, vector<string>> responses;
+    for (const auto& question : survey_questions) {
+        if (question.first == "workshop_interest" || question.first == "mentorship_interest") {
+            responses[question.first].push_back(get_yes_no_input("Are you interested in workshops/mentorship programs related to your career?") ? "Yes" : "No");
+        } else if (question.first == "international_experience_importance") {
+            string question_prompt = "How important is international experience for you (1 - not important at all, 5 - extremely important)?";
+            int response = 0;
+            while (response < 1 || response > 5) {
+                cout << question_prompt << ": ";
+                cin >> response;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            }
+            responses[question.first].push_back(to_string(response));
+        } else if (question.second.size() > 2) {
+            responses[question.first] = get_multiple_choice_input("Please select your preferences for " + question.first + ":", question.second);
+        } else {
+            responses[question.first].push_back(get_yes_no_input("Do you have interest in " + question.second[0] + "?") ? question.second[0] : "");
+        }
+    }
+    return responses;
+}
+
+// Function to analyze responses and suggest a career path
+string suggest_career_path(unordered_map<string, vector<string>>& responses, unordered_map<string, vector<string>>& career_suggestions) {
+    unordered_map<string, int> scores;
+    for (const auto& career : career_suggestions) {
+        scores[career.first] = 0;
+    }
+    for (const auto& response : responses) {
+        for (const auto& career : career_suggestions) {
+            for (const auto& value : response.second) {
+                if (find(career.second.begin(), career.second.end(), value) != career.second.end()) {
+                    scores[career.first]++;
+                }
+            }
+        }
+    }
+    // Determine the career path with the highest score
+    string suggested_career;
+    int max_score = 0;
+    for (const auto& score : scores) {
+        if (score.second > max_score) {
+            max_score = score.second;
+            suggested_career = score.first;
+        }
+    }
+    return suggested_career;
+}
+
+int main() {
+    cout << "Welcome to the Career Path Suggestion Tool!" << endl;
+    cout << "Please answer the following questions with yes or no." << endl;
+    cout << "-------------------------------------------------------------------------" << endl;
+
+    // Simulate survey responses
+    unordered_map<string, vector<string>> responses = simulate_responses();
+
+    // Define career suggestions
+    unordered_map<string, vector<string>> career_suggestions = {
+        {"public policy", {"Policy officer", "Social impact"}},
+        {"risk management", {"Financial economics", "Banking and finance"}},
+        {"corporate banking", {"Banking and finance", "Salary potential"}},
+        {"consulting", {"Economic consultancy", "Opportunities for career advancement"}}
+    };
+
+    // Analyze responses and suggest a career path
+    string suggested_career = suggest_career_path(responses, career_suggestions);
+
+    cout << "Based on your responses, the suggested career path is: " << suggested_career << endl;
+
+    return 0;
+}
